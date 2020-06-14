@@ -29,8 +29,8 @@ The uniform specs will be the same that:
 * [glslEditor](https://github.com/patriciogonzalezvivo/glslEditor/): Js/WebGL/Electron editor
 * [glslViewer](https://github.com/patriciogonzalezvivo/glslViewer): C++/OpenGL ES 2.0 native app for win/osx/linux/raspberry pi 
 * [ofxshader](https://github.com/patriciogonzalezvivo/ofxShader/): Openframeworks addon 
-* [<shader-doodle>](https://github.com/halvves/shader-doodle): A friendly web-component for writing and rendering shaders
-* [vscode-glsl-canvas](https://marketplace.visualstudio.com/items?itemName=circledev.glsl-canvas): live WebGL preview of GLSL shaders for VSCode
+* [vscode-glsl-canvas](https://marketplace.visualstudio.com/items?itemName=circledev.glsl-canvas): live WebGL preview of GLSL shaders for VSCode made by [Luca Zampetti](https://twitter.com/actarian)
+* [shader-doodle](https://github.com/halvves/shader-doodle): A friendly web-component for writing and rendering shaders made by [@halvves](https://twitter.com/halvves)
 
 So far the supported uniforms are:
 
