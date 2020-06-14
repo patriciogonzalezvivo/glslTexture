@@ -25,11 +25,11 @@ Create textures from Glsl fragment shaders on Blender 2.8+
 The uniform specs will be the same that: 
 
 * [The Book of Shaders](https://thebookofshaders.com/): gentel guide into shaders
+* [PixelSpirit Deck](https://patriciogonzalezvivo.github.io/PixelSpiritDeck/): esoteric tarot deck, where each card builds on top of each other a portable library of generative GLSL code.
 * [glslCanvas](https://github.com/patriciogonzalezvivo/glslCanvas/): Js/WebGL
 * [glslEditor](https://github.com/patriciogonzalezvivo/glslEditor/): Js/WebGL/Electron editor
 * [glslViewer](https://github.com/patriciogonzalezvivo/glslViewer): C++/OpenGL ES 2.0 native app for win/osx/linux/raspberry pi 
 * [ofxshader](https://github.com/patriciogonzalezvivo/ofxShader/): Openframeworks addon
-* [PixelSpiritDeck](https://patriciogonzalezvivo.github.io/PixelSpiritDeck/): esoteric tarot deck, where each card builds on top of each other a portable library of generative GLSL code.
 * [vscode-glsl-canvas](https://marketplace.visualstudio.com/items?itemName=circledev.glsl-canvas): live WebGL preview of GLSL shaders for VSCode made by [Luca Zampetti](https://twitter.com/actarian)
 * [shader-doodle](https://github.com/halvves/shader-doodle): A friendly web-component for writing and rendering shaders made by [@halvves](https://twitter.com/halvves)
 
