@@ -1,13 +1,26 @@
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTIBILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program. If not, see <http://www.gnu.org/licenses/>.
+
 bl_info = {
-    "name": "GlslViewer",
+    "name": "glslTexture",
     "author": "Patricio Gonzalez Vivo",
-    "version": (1, 0),
+    "description": "Adds a texture generated from a GLSL frament shader",
     "blender": (2, 80, 0),
+    "version": (0, 0, 1),
     "location": "Operator Search",
-    "description": "Add a texture generated with a simple GLSL frament shader",
     "warning": "",
     "doc_url": "",
-    "category": "Texture",
+    "category": "Texture"
 }
 
 import bpy
@@ -98,9 +111,9 @@ void main() {
         return wm.invoke_props_dialog(self)
     
     def modal(self, context, event):
-        if event.type in {'RIGHTMOUSE', 'ESC'}:
-            self.cancel(context)
-            return {'CANCELLED'}
+        # if event.type in {'ESC'}:
+        #     self.cancel(context)
+        #     return {'CANCELLED'}
         
         if event.type == 'TIMER':
             
