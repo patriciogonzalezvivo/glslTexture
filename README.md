@@ -35,4 +35,5 @@ The uniform specs will be the same that:
 
 So far the supported uniforms are:
 
-* `uniform vec2 u_resolution;`: 2D vector with the width and height of the target texture  
+* `uniform vec2  u_resolution;`: 2D vector with the width and height of the target texture  
+* `uniform float u_time;`: float variable with the amount of seconds of the timeline 
