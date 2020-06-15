@@ -67,22 +67,11 @@ class TEXTURE_OT_glsl_texture(bpy.types.Operator):
         except:
             return False
     
-    def file_reload(self, filename):
-        text = bpy.data.texts[self.source]
-#        text.filepath = filename
-#        fp = bpy.path.abspath(text.filepath)
-        fp = bpy.path.abspath(filename)
-        text.clear()
-        
-        with open(fp) as f:
-            text.write(f.read())
-        return True
-    
     _timer = None
     
     def invoke(self, context, event):
         
-        self.vertex_shader = '''
+        self.vertex_default = '''
 in vec2 a_position;
 in vec2 a_texcoord;
 
@@ -91,54 +80,54 @@ void main() {
 }
 '''
             
-        self.default_shader = '''
+        self.default_code = '''
 uniform vec2    u_resolution;
+uniform float   u_time;
 
 void main() {
     vec3 color = vec3(0.0); 
     vec2 st = gl_FragCoord.xy / u_resolution;
     
     color.rg = st;
+    color.b = abs(sin(u_time));
 
     gl_FragColor = vec4(color, 1.0);
 }
 '''
 
-        self.current_shader = ''
-        self.fromFile = False
+        self.current_code = ''
+        self.current_time = 0.0
+        self.shader = None
+        self.batch = None
     
         wm = context.window_manager
         return wm.invoke_props_dialog(self)
     
     def modal(self, context, event):
-        # if event.type in {'ESC'}:
-        #     self.cancel(context)
-        #     return {'CANCELLED'}
+        if event.type in {'ESC'}:
+            self.cancel(context)
+            return {'CANCELLED'}
         
         if event.type == 'TIMER':
             
+            # If there is no reference to source on the text editor, create one
             if not self.source in bpy.data.texts:
-                print(f'File name {self.source} not found. Ready to create one')
+                print(f'File name {self.source} not found. Will create an internal one')
                 
+                # If match an external file 
                 if self.file_exist(self.source):
-                    print("It's a file")
                     bpy.ops.text.open(filepath=self.source)
-                    self.fromFile = True
+
+                # else create a internal file with the default fragment code
                 else:
                     bpy.data.texts.new(self.source)
-                    print("It's not a file, populate with the default shader")
-                    bpy.data.texts[self.source].write(self.default_shader)
+                    bpy.data.texts[self.source].write(self.default_code)
             
-            recompile = False
-            
+            # If the source file is external and it have been modify, reload it
             if not bpy.data.texts[self.source].is_in_memory and bpy.data.texts[self.source].is_modified:
-                print("Have been modify")
-#                bpy.ops.text.resolve_conflict(resolution='RELOAD')
-#                self.file_reload(self.source)
+                print(f'External file {self.source} have been modify. Reloading...')
                 text = bpy.data.texts[self.source]
                 ctx = context.copy()
-#                ctx["edit_text"] = text
-#                bpy.ops.text.reload(ctx)
                 #Ensure  context area is not None
                 ctx['area'] = ctx['screen'].areas[0]
                 oldAreaType = ctx['area'].type
@@ -147,81 +136,95 @@ void main() {
                 bpy.ops.text.resolve_conflict(ctx, resolution='RELOAD')
                 #Restore context
                 ctx['area'].type = oldAreaType
-                    
-            if self.current_shader != bpy.data.texts[self.source].as_string():
+
+            render = False
+            recompile = False
+
+            now = context.scene.frame_float / context.scene.render.fps
+            
+            # If shader content change 
+            if self.current_code != bpy.data.texts[self.source].as_string():
                 recompile = True
-                
-            if recompile:
-                print("Recompile... ")
-                
-                fragment_shader = bpy.data.texts[self.source].as_string()
-                self.current_shader = fragment_shader
+
+            if self.current_time != now:
+                render = True
+
+            if render or recompile:
+                self.current_code = bpy.data.texts[self.source].as_string()
+                self.current_time = now
             
                 offscreen = gpu.types.GPUOffScreen(self.width, self.height)
-
                 with offscreen.bind():
                     bgl.glClear(bgl.GL_COLOR_BUFFER_BIT)
     
-                    try:
-                        shader = gpu.types.GPUShader(self.vertex_shader, fragment_shader)
-                    except Exception as Err:
-                        print(Err)
-                        recompile = False
+                    # If there is no shader or need to be recompiled
+                    if self.shader == None or recompile:
+                        try:    
+                            self.shader = gpu.types.GPUShader(self.vertex_default, self.current_code)
+                        except Exception as Err:
+                            print(Err)
+                            self.shader = None
                     
-                    if recompile:
-                        batch = batch_for_shader(
-                            shader, 
+                    # if there is a shader and no batch
+                    if (self.shader != None and self.batch == None):
+                        self.batch = batch_for_shader(
+                            self.shader, 
                             'TRI_FAN', {
                                 'a_position': ((-1, -1), (1, -1), (1, 1), (-1, 1))
                             },
                         )
                 
-                        shader.bind()
+                    if self.shader != None:
+                        self.shader.bind()
             
-#                        try:
-#                            shader.uniform_float('u_time', bpy.context.scene.frame_float/bpy.context.scene.render.fps)
-#                        except ValueError:
-#                            print('Uniform: u_time not used')
-                
                         try:
-                            shader.uniform_float('u_resolution', (self.width, self.height))
-                        except ValueError: 
-                            print('Uniform: u_resolution not used')
+                            self.shader.uniform_float('u_time', self.current_time)
+                        except ValueError:
+                            pass
             
-                        batch.draw(shader)
+                        try:
+                            self.shader.uniform_float('u_resolution', (self.width, self.height))
+                        except ValueError: 
+                            pass
+            
+                        self.batch.draw(self.shader)
 
-                        buffer = bgl.Buffer(bgl.GL_BYTE, self.width * self.height * 4)
-                        bgl.glReadBuffer(bgl.GL_BACK)
-                        bgl.glReadPixels(0, 0, self.width, self.height, bgl.GL_RGBA, bgl.GL_UNSIGNED_BYTE, buffer)
+                    buffer = bgl.Buffer(bgl.GL_BYTE, self.width * self.height * 4)
+                    bgl.glReadBuffer(bgl.GL_BACK)
+                    bgl.glReadPixels(0, 0, self.width, self.height, bgl.GL_RGBA, bgl.GL_UNSIGNED_BYTE, buffer)
+                    render = True
 
                 offscreen.free()
 
-                if recompile:
-                    print("Success recompiling")
-                    name = self.source.split(".")[0]
-
+                if render:
+                    name = self.source.split("/")[-1].split(".")[0]
                     if not name in bpy.data.images:
                         bpy.data.images.new(name, self.width, self.height)
                     image = bpy.data.images[name]
                     image.scale(self.width, self.height)
                     image.pixels = [v / 255 for v in buffer]
                     
-        
         return {'PASS_THROUGH'}
     
     def execute(self, context):
         wm = context.window_manager
-        self._timer = wm.event_timer_add(0.1, window=context.window)
+        self.timer = wm.event_timer_add(0.1, window=context.window)
         wm.modal_handler_add(self)
         return {'RUNNING_MODAL'}
     
     def cancel(self, context):
         print(f'GlslTexture {self.source} cancel refreshing')
         wm = context.window_manager
-        wm.event_timer_remove(self._timer)
+        wm.event_timer_remove(self.timer)
+
+blender_classes = [
+    TEXTURE_OT_glsl_texture
+]
 
 def register():
-    bpy.utils.register_class(TEXTURE_OT_glsl_texture)
+    for blender_class in blender_classes:
+        bpy.utils.register_class(blender_class)
 
 def unregister():
-    bpy.utils.unregister_class(TEXTURE_OT_glsl_texture)
+    for blender_class in blender_classes:
+        bpy.utils.unregister_class(blender_class)
