@@ -104,9 +104,9 @@ void main() {
         return wm.invoke_props_dialog(self)
     
     def modal(self, context, event):
-        if event.type in {'ESC'}:
-            self.cancel(context)
-            return {'CANCELLED'}
+        # if event.type in {'ESC'}:
+        #     self.cancel(context)
+        #     return {'CANCELLED'}
         
         if event.type == 'TIMER':
             
