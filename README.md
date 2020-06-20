@@ -48,4 +48,7 @@ So far the supported uniforms are:
 
 # Roadmap
 
-[ ] Reaload GlslTextures when reloading the file 
+[ ] Reaload GlslTextures (actually any image with the same name that a text on a project)
+[ ] Improve performance for animation
+[ ] it's possible to make this a node to pass uniforms in?
+[ ] Multi buffers?
