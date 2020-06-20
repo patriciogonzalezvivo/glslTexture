@@ -27,6 +27,7 @@ import bpy
 import gpu
 import bgl
 from gpu_extras.batch import batch_for_shader
+from bpy.app.handlers import persistent
 
 class TEXTURE_OT_glsl_texture(bpy.types.Operator):
     """Make a texture from a GLSL Shader"""
@@ -54,7 +55,7 @@ class TEXTURE_OT_glsl_texture(bpy.types.Operator):
         description = 'Text file name which contain the frament shader source code',
         default = 'default.frag'
     )
-    
+
     @classmethod
     def poll(cls, context):
         return True
@@ -79,7 +80,7 @@ void main() {
     gl_Position = vec4(a_position, 0.0, 1.0);
 }
 '''
-            
+
         self.default_code = '''
 uniform vec2    u_resolution;
 uniform float   u_time;
@@ -95,8 +96,9 @@ void main() {
 }
 '''
 
-        self.current_code = ''
+        self.current_code = ""
         self.current_time = 0.0
+
         self.shader = None
         self.batch = None
     
@@ -104,9 +106,9 @@ void main() {
         return wm.invoke_props_dialog(self)
     
     def modal(self, context, event):
-        # if event.type in {'ESC'}:
-        #     self.cancel(context)
-        #     return {'CANCELLED'}
+        if event.type in {'ESC'}:
+            self.cancel(context)
+            return {'CANCELLED'}
         
         if event.type == 'TIMER':
             
@@ -197,7 +199,7 @@ void main() {
                 offscreen.free()
 
                 if render:
-                    name = self.source.split("/")[-1].split(".")[0]
+                    name = self.source
                     if not name in bpy.data.images:
                         bpy.data.images.new(name, self.width, self.height)
                     image = bpy.data.images[name]
@@ -221,10 +223,25 @@ blender_classes = [
     TEXTURE_OT_glsl_texture
 ]
 
+@persistent
+def loadGlslTextures(dummy):
+
+    print("Looking for GlslTexture")
+    for source_name in bpy.data.texts.keys():
+        if source_name in bpy.data.images.keys():
+            width = bpy.data.images[source_name].generated_width
+            height = bpy.data.images[source_name].generated_height
+            print(f"Loading GlslTexture {source_name}")
+            bpy.ops.texture.glsl_texture('INVOKE_DEFAULT', width=width, height=height, source=source_name)
+
 def register():
     for blender_class in blender_classes:
         bpy.utils.register_class(blender_class)
+    print("Registered GlslTexture")
+    bpy.app.handlers.load_post.append(loadGlslTextures)
+
 
 def unregister():
+    bpy.app.handlers.load_post.remove(loadGlslTextures)
     for blender_class in blender_classes:
         bpy.utils.unregister_class(blender_class)

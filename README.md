@@ -1,8 +1,16 @@
-Create textures from Glsl fragment shaders on Blender 2.8+
+Create textures from Glsl fragment shaders on Blender 2.8+ (works only on Linux and Windows for now)
 
 # Install
 
-// TODO
+![](imgs/04.png)
+
+1. Click on "Clone or Download"
+2. Click on "Download ZIP"
+3. Click "Edit" > "Preferences..." > "Add-ons"
+4. Click install and load the zip file you just download
+5. Check the box next to "GlslTexture"
+
+![](imgs/05.png)
 
 # Use
 
@@ -37,3 +45,7 @@ So far the supported uniforms are:
 
 * `uniform vec2  u_resolution;`: 2D vector with the width and height of the target texture  
 * `uniform float u_time;`: float variable with the amount of seconds of the timeline 
+
+# Roadmap
+
+[ ] Reaload GlslTextures when reloading the file 
