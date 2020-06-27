@@ -35,21 +35,21 @@ class TEXTURE_OT_glsl_texture(bpy.types.Operator):
     bl_label = 'GlslTexture'
     bl_options = { 'REGISTER', 'UNDO' }
     
-    width: bpy.props.IntProperty(
+    width =  bpy.props.IntProperty(
         name = 'width',
         description = 'Texture width',
         default = 512,
         min = 1
     )
         
-    height: bpy.props.IntProperty(
+    height = bpy.props.IntProperty(
         name = 'height',
         description = 'Texture height',
         default = 512,
         min = 1
     )
 
-    source: bpy.props.StringProperty(
+    source = bpy.props.StringProperty(
 #        subtype="FILE_PATH",
         name = 'Source',
         description = 'Text file name which contain the frament shader source code',
