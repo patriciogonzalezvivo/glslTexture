@@ -17,7 +17,7 @@ bl_info = {
     "description": "Adds a texture generated from a GLSL frament shader",
     "blender": (2, 80, 0),
     "version": (0, 0, 1),
-    "location": "Operator Search",
+    "location": "Add",
     "warning": "",
     "doc_url": "",
     "category": "Texture"
@@ -29,9 +29,9 @@ import bgl
 from gpu_extras.batch import batch_for_shader
 from bpy.app.handlers import persistent
 
-class TEXTURE_OT_glsl_texture(bpy.types.Operator):
+class GlslTexture(bpy.types.Operator):
     """Make a texture from a GLSL Shader"""
-    bl_idname = 'texture.glsl_texture'
+    bl_idname = 'add.glsltexture'
     bl_label = 'GlslTexture'
     bl_options = { 'REGISTER', 'UNDO' }
     
@@ -104,7 +104,7 @@ void main() {
     
         wm = context.window_manager
         return wm.invoke_props_dialog(self)
-    
+
     def modal(self, context, event):
         if event.type in {'ESC'}:
             self.cancel(context)
@@ -219,9 +219,6 @@ void main() {
         wm = context.window_manager
         wm.event_timer_remove(self.timer)
 
-blender_classes = [
-    TEXTURE_OT_glsl_texture
-]
 
 @persistent
 def loadGlslTextures(dummy):
@@ -234,14 +231,23 @@ def loadGlslTextures(dummy):
             print(f"Loading GlslTexture {source_name}")
             bpy.ops.texture.glsl_texture('INVOKE_DEFAULT', width=width, height=height, source=source_name)
 
+def menu_func(self, context):
+    self.layout.operator(GlslTexture.bl_idname, text=GlslTexture.bl_label,icon='COLORSET_02_VEC')
+
 def register():
-    for blender_class in blender_classes:
-        bpy.utils.register_class(blender_class)
-    print("Registered GlslTexture")
+
+    bpy.utils.register_class(GlslTexture)
     bpy.app.handlers.load_post.append(loadGlslTextures)
+    bpy.types.VIEW3D_MT_add.append(menu_func)
 
 
 def unregister():
+    bpy.types.VIEW3D_MT_add.remove(menu_func)
     bpy.app.handlers.load_post.remove(loadGlslTextures)
-    for blender_class in blender_classes:
-        bpy.utils.unregister_class(blender_class)
+    bpy.utils.unregister_class(GlslTexture)
+    
+
+
+
+if __name__ == "__main__":
+    register()
