@@ -16,7 +16,7 @@ bl_info = {
     "author": "Patricio Gonzalez Vivo",
     "description": "Adds a texture generated from a GLSL frament shader",
     "blender": (2, 80, 0),
-    "version": (0, 0, 1),
+    "version": (0, 0, 2),
     "location": "Add",
     "warning": "",
     "doc_url": "",
@@ -71,36 +71,30 @@ class GlslTexture(bpy.types.Operator):
     _timer = None
     
     def invoke(self, context, event):
-        
-        self.vertex_default = '''
-in vec2 a_position;
-in vec2 a_texcoord;
-
-void main() {
-    gl_Position = vec4(a_position, 0.0, 1.0);
-}
-'''
-
-        self.default_code = '''
-uniform vec2    u_resolution;
-uniform float   u_time;
-
-void main() {
-    vec3 color = vec3(0.0); 
-    vec2 st = gl_FragCoord.xy / u_resolution;
-    
-    color.rg = st;
-    color.b = abs(sin(u_time));
-
-    gl_FragColor = vec4(color, 1.0);
-}
-'''
-
         self.current_code = ""
         self.current_time = 0.0
 
         self.shader = None
         self.batch = None
+
+        self.vertex_default = '''
+void main() {
+    v_texcoord = a_texcoord;
+    gl_Position = vec4(a_position, 0.0, 1.0);
+}
+'''
+
+        self.default_code = '''
+void main() {
+    vec4 color = vec4(0.0, 0.0, 0.0, 1.0); 
+    vec2 uv = v_texcoord;
+    
+    color.rg = st;
+    color.b = abs(sin(u_time));
+
+    FragColor = color;
+}
+'''
     
         wm = context.window_manager
         return wm.invoke_props_dialog(self)
@@ -161,8 +155,25 @@ void main() {
     
                     # If there is no shader or need to be recompiled
                     if self.shader == None or recompile:
+
+                        vert_out = gpu.types.GPUStageInterfaceInfo("my_interface")
+                        vert_out.smooth('VEC2', "v_texcoord")
+
+                        shader_info = gpu.types.GPUShaderCreateInfo()
+                        # shader_info.push_constant('MAT4', "viewProjectionMatrix")
+                        # shader_info.push_constant('MAT4', "modelMatrix")
+                        shader_info.push_constant('VEC2', "u_resolution")
+                        shader_info.push_constant('FLOAT', "u_time")
+                        # shader_info.sampler(0, 'FLOAT_2D', "image")
+                        shader_info.vertex_in(0, 'VEC2', "a_position")
+                        shader_info.vertex_in(1, 'VEC2', "a_texcoord")
+                        shader_info.vertex_out(vert_out)
+                        shader_info.fragment_out(0, 'VEC4', "FragColor")
+                        shader_info.vertex_source( self.vertex_default )
+                        shader_info.fragment_source( self.current_code )
+
                         try:    
-                            self.shader = gpu.types.GPUShader(self.vertex_default, self.current_code)
+                            self.shader = gpu.shader.create_from_info(shader_info)
                         except Exception as Err:
                             print(Err)
                             self.shader = None
@@ -172,7 +183,8 @@ void main() {
                         self.batch = batch_for_shader(
                             self.shader, 
                             'TRI_FAN', {
-                                'a_position': ((-1, -1), (1, -1), (1, 1), (-1, 1))
+                                'a_position': ((-1, -1), (1, -1), (1, 1), (-1, 1)),
+                                "a_texcoord": ((0, 0), (1, 0), (1, 1), (0, 1)),
                             },
                         )
                 
@@ -235,7 +247,6 @@ def menu_func(self, context):
     self.layout.operator(GlslTexture.bl_idname, text=GlslTexture.bl_label,icon='COLORSET_02_VEC')
 
 def register():
-
     bpy.utils.register_class(GlslTexture)
     bpy.app.handlers.load_post.append(loadGlslTextures)
     bpy.types.VIEW3D_MT_add.append(menu_func)
